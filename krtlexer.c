@@ -92,6 +92,9 @@ void processLine(char *line, int lineNumber, FILE *symbolTable) {
     const char *reservedWords[] = {"true", "false", "null", "const"};
     int reservedWordCount = sizeof(reservedWords) / sizeof(reservedWords[0]);
 
+    const char *noiseWords[] = {"by", "from", "until"};
+    int noiseWordCount = sizeof(noiseWords) / sizeof(noiseWords[0]);
+
     for (int j = 0; line[j] != '\0'; j++) {
         char c = line[j];
 
@@ -129,28 +132,25 @@ void processLine(char *line, int lineNumber, FILE *symbolTable) {
                 } else {
                     currentToken[i] = '\0';
 
-                     // Check if it's a reserved word
-                    int isReserved = 0;
+                    // Check if it's a reserved or noise word
+                    int isReserved = 0, isNoiseWord = 0;
                     for (int k = 0; k < reservedWordCount; k++) {
-                        const char *reserved = reservedWords[k];
-                        int match = 1;
-
-                        for (int r = 0; reserved[r] != '\0'; r++) {
-                            if (currentToken[r] != reserved[r] || currentToken[r] == '\0') {
-                                match = 0;
-                                break;
-                            }
-                        }
-
-                        // Ensure the token length matches the reserved word length
-                        if (match && currentToken[strlen(reserved)] == '\0') {
+                        if (strcmp(currentToken, reservedWords[k]) == 0) {
                             isReserved = 1;
+                            break;
+                        }
+                    }
+                    for (int k = 0; k < noiseWordCount; k++) {
+                        if (strcmp(currentToken, noiseWords[k]) == 0) {
+                            isNoiseWord = 1;
                             break;
                         }
                     }
 
                     if (isReserved) {
                         writeToken(symbolTable, "Reserved Word", currentToken, lineNumber);
+                    } else if (isNoiseWord) {
+                        writeToken(symbolTable, "Noise Word", currentToken, lineNumber);
                     } else {
                         writeToken(symbolTable, "Identifier", currentToken, lineNumber);
                     }
@@ -283,6 +283,7 @@ void processLine(char *line, int lineNumber, FILE *symbolTable) {
                 state = START;
                 j--;  // Reprocess this character
                 break;
+
         }
     }
 
@@ -290,28 +291,23 @@ void processLine(char *line, int lineNumber, FILE *symbolTable) {
     if (i > 0) {
         currentToken[i] = '\0';
         if (state == IDENTIFIER) {
-            // Check if it's a reserved word
-            int isReserved = 0;
+            int isReserved = 0, isNoiseWord = 0;
             for (int k = 0; k < reservedWordCount; k++) {
-                const char *reserved = reservedWords[k];
-                int match = 1;
-
-                for (int r = 0; reserved[r] != '\0'; r++) {
-                    if (currentToken[r] != reserved[r] || currentToken[r] == '\0') {
-                        match = 0;
-                        break;
-                    }
-                }
-
-                // Ensure the token length matches the reserved word length
-                if (match && currentToken[strlen(reserved)] == '\0') {
+                if (strcmp(currentToken, reservedWords[k]) == 0) {
                     isReserved = 1;
                     break;
                 }
             }
-
+            for (int k = 0; k < noiseWordCount; k++) {
+                if (strcmp(currentToken, noiseWords[k]) == 0) {
+                    isNoiseWord = 1;
+                    break;
+                }
+            }
             if (isReserved) {
                 writeToken(symbolTable, "Reserved Word", currentToken, lineNumber);
+            } else if (isNoiseWord) {
+                writeToken(symbolTable, "Noise Word", currentToken, lineNumber);
             } else {
                 writeToken(symbolTable, "Identifier", currentToken, lineNumber);
             }
